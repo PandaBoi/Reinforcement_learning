@@ -89,11 +89,13 @@ class GRid_World:
 					next_state , reward = self.take_step([i,j])
 					v_next = np.array([[ self.V_values[s[0]][s[1]] ] for s in next_state])
 					
+					# computes bellman equation 
 					a = reward +self.gamma*v_next
 					b = np.squeeze(a)
 					temp_V_value[i][j] = b.dot(self.prob)
 
-			if np.sum(np.abs(temp_V_value - self.V_values)) < 1e-4:
+			#checks for convergence
+			if np.max(np.abs(temp_V_value - self.V_values)) < 1e-4:
 				break
 			self.V_values = temp_V_value
 
@@ -109,11 +111,13 @@ class GRid_World:
 					next_state , reward = self.take_step([i,j])
 					v_next = np.array([[ self.V_values[s[0]][s[1]] ] for s in next_state])
 					
+					#takes max value from all possible values of bellman eq.
 					a = reward +self.gamma*v_next
 					b = np.squeeze(a)
 					temp_V_value[i][j] = np.max(b)
 
-			if np.sum(np.abs(temp_V_value - self.V_values)) < 1e-4:
+			#checks for convergence
+			if np.max(np.abs(temp_V_value - self.V_values)) < 1e-4:
 				break
 			self.V_values = temp_V_value
 
@@ -121,7 +125,7 @@ test = GRid_World()
 
 # next_s ,reward=test.take_step([0,1])
 # print(next_s[0][1])
-test.bellman_opt_compute()
+test.bellman_compute()
 print(np.around(test.V_values, decimals = 1))
 x = np.around(test.V_values, decimals = 1)
 fig1=plt.figure().add_subplot(111)
