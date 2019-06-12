@@ -4,6 +4,28 @@ import pickle
 from math import exp,factorial
 
 
+	'''
+		A take on Jack's rental problem from chapter 4 - Dynamic Programming
+
+		actions :- all possible actions
+		policy :- action taken on each state
+		State_values :- matrix with all state values
+
+
+		fixed parameters:==
+
+		LAMBDA_RET_1 = 3
+		LAMBDA_RET_2 = 2
+		LAMBDA_REQ_1 = 3
+		LAMBDA_REQ_2 = 4
+		INCOME = 10
+		PENALTY = 2
+		DISCOUNT = 0.9
+		MAX_CARS = 20
+		MOV_CARS = 5
+	'''
+
+
 LAMBDA_RET_1 = 3
 LAMBDA_RET_2 = 2
 LAMBDA_REQ_1 = 3
@@ -116,13 +138,14 @@ def play():
 		print("diff in policy",policy_diff)		
 		policy = policy_co
 
-		name = 'policy__'+str(ep)+'.pkl'
-		f = open(name,'wb')
-		pickle.dump(policy,f)
-		f.close()
+		
 		
 		if policy_diff == 0:
 			print("policy improved")
+			name = 'policy__'+str(ep)+'.pkl'
+			f = open(name,'wb')
+			pickle.dump(policy,f)
+			f.close()
 			break
 		
 	
