@@ -29,13 +29,21 @@ class Agent():
 			sum_hand , dealer_hand, ace = state
 			return 0 if sum_hand >= 20 else 1
 		else:
-			num = np.random.random()
-			if(num <self.epsilon):
-				action = np.random.choice(self.actions, p = [0.5,0.5])
-			else:
-				q_vals = [self.sa_values[(state,x)] for x in self.actions]
-				action = np.argmax(q_vals)
+			# epsilon- greedy policy
 
+			# num = np.random.random()
+			# if(num <self.epsilon):
+			# 	action = np.random.choice(self.actions, p = [0.5,0.5])
+			# else:
+			# 	q_vals = [self.sa_values[(state,x)] for x in self.actions]
+			# 	action = np.argmax(q_vals)
+
+			# epsilon-soft policy
+			actions = np.ones(2) * (self.epsilon/self.env.action_space.n)
+			q_vals = [self.sa_values[(state,x)] for x in self.actions]
+			best_action = np.argmax(q_vals)
+			actions[best_action] += 1 - self.epsilon
+			action = np.random.choice(self.actions,p = actions)
 			return action
 
 
@@ -133,7 +141,7 @@ class Agent():
 
 env = Black_jack.BlackjackEnv()
 steps = 100000
-test = Agent(env,episodes = steps, epsilon = 0.2)
+test = Agent(env,episodes = steps, epsilon = 0.1)
 
 # print(test.sa_values)
 
@@ -162,6 +170,7 @@ test = Agent(env,episodes = steps, epsilon = 0.2)
 #for control
 
 test.MC_control()
+# print(test.sa_values)
 noace = list(filter(lambda x: (x[0][2]== False) , test.sa_values.keys() ))
 ace = list(filter(lambda x: (x[0][2]== True) , test.sa_values.keys() ))
 
@@ -169,7 +178,7 @@ ace = list(filter(lambda x: (x[0][2]== True) , test.sa_values.keys() ))
 noace_val = [(test.sa_values[x]) for x in noace]
 ace_val = [(test.sa_values[x]) for x in ace]
 keys =list(test.sa_values.keys())
-# print(ace_val)
+# print(ace)
 
 x1 = min(key[0][0] for key in keys)
 x2 = max(key[0][0] for key in keys)
