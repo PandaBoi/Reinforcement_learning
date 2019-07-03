@@ -19,9 +19,33 @@ class Agent():
 		self.epsilon = epsilon
 		self.episodes = episodes
 		self.state_count = defaultdict(float)
+
 		self.sa_values = defaultdict(float)
 		self.state_sum = defaultdict(float)
 		self.State_values = defaultdict(float)
+		
+		#for off policy mc control
+
+		self.b = defaultdict(float)
+		self.c = defaultdict(int)
+	def target_policy(self,state):
+
+		#greedy policy
+		q_vals = [self.sa_values[(state,x)] for x in self.actions]
+		best_action = np.random.choice(np.where(q_vals == q_vals.max())[0])
+		return self.actions[best_action]
+
+	def behaviour_policy(self,state):
+
+		# E-soft policy
+		actions = np.ones(2) * (self.epsilon/self.env.action_space.n)
+		q_vals = [self.sa_values[(state,x)] for x in self.actions]
+		best_action = np.argmax(q_vals)
+		actions[best_action] += 1 - self.epsilon
+		action = np.random.choice(self.actions,p = actions)
+		self.b[(state,action)] = actions[action]
+		return action
+
 
 	def player_policy(self,state,first_time = True):
 
@@ -123,6 +147,46 @@ class Agent():
 				self.sa_values[st_ac] += (G - self.sa_values[st_ac])/(self.state_count[st_ac] )
 
 
+	def off_policy(self):
+
+		for i in range(self.episodes+1):
+
+			if i%1000 ==0:
+				print("episode {}/{} done".format(i,self.episodes))
+
+			ep = []
+			env = self.env
+			state = env.reset()
+			done = False
+			
+			while not done:
+				action = self.behaviour_policy(state)
+				next_state , reward , done,_ = env.step(action)
+				#appending action as it is needed
+				#for estimation of  the state_action values
+				ep.append((state,action,reward))
+				state = next_state
+
+			ep_states_action = set([(tuple(x[0]),x[1]) for x in ep])
+
+			G = 0
+			W = 1
+
+			for s,a,r in ep [::-2]:
+
+				G = self.discount*G + r
+				self.c[(s,a)] += W
+				self.sa_values[(s,a)] += (W/self.c[(s,a)])*(G - self.sa_values[(s,a)]) 
+
+				target_a = self.player_policy(s)
+				if a != target_a:
+					break
+				W /=self.b[(s,a)] 
+
+
+
+
+
 
 
 
@@ -145,8 +209,10 @@ test = Agent(env,episodes = steps, epsilon = 0.1)
 
 # print(test.sa_values)
 
-#for estimation
+#for estimation==============================================================================================
+
 # test.estimation_step()
+
 # noace = list(filter(lambda x: (x[2]== False) , test.State_values.keys() ))
 # ace = list(filter(lambda x: (x[2]== True) , test.State_values.keys() ))
 
@@ -166,11 +232,15 @@ test = Agent(env,episodes = steps, epsilon = 0.1)
 # Z_noace = np.apply_along_axis(lambda _: test.sa_values[(_[0], _[1], False)], 2, np.dstack([X, Y]))
 # Z_ace = np.apply_along_axis(lambda _: test.sa_values[(_[0], _[1], True)], 2, np.dstack([X, Y]))
 
+#================================================================================================================
 
-#for control
+#for control (on and off)======================================================================================================
 
-test.MC_control()
-# print(test.sa_values)
+
+# test.MC_control()
+test.off_policy()
+
+# # print(test.sa_values)
 noace = list(filter(lambda x: (x[0][2]== False) , test.sa_values.keys() ))
 ace = list(filter(lambda x: (x[0][2]== True) , test.sa_values.keys() ))
 
@@ -204,7 +274,8 @@ Z_noace = np.apply_along_axis(lambda _: test.sa_values[(_[0], _[1], False),0], 2
 Z_ace = np.apply_along_axis(lambda _: test.sa_values[(_[0], _[1], True),1], 2, np.dstack([X, Y]))
 Z_ace = np.apply_along_axis(lambda _: test.sa_values[(_[0], _[1], True),0], 2, np.dstack([X, Y]))
 
-# print(len(Y))
+#================================================================================================================
 
 make_graph_3d(X, Y, Z_noace,'{} (no usable ace)'.format(steps))
 make_graph_3d(X, Y, Z_ace,'{} (usable ace)'.format(steps))
+
